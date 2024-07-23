@@ -1,0 +1,13 @@
+AggSectorID;AggSectorCode;AggSectorName;MinCorrLength
+0;A;PublicPower;0
+1;B;Industry;0
+2;C;OtherStationaryComb;25
+3;D;Fugitives;100
+4;E;Solvents;0
+5;F1-F2-F3-F4;RoadTransport;20
+6;G;Shipping;75
+7;H;Aviation;0
+8;I;OffRoad;40
+9;J;Waste;0
+10;K;AgriLivestock;75
+11;L;AgriOther;40
