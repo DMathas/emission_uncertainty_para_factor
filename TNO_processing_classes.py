@@ -598,7 +598,6 @@ class Data_analyzer(object):
                     ax.scatter(country_labels.index(country), sigma_eta_calc*100, color=color_calc, marker='s', s=marker_size)
 
             emis_cat_name = self.data.cats[self.data.cats['emis_cat_code'] == emis_cat].iloc[0]['emis_cat_name']
-            # ax.set_title(f'Relative Standard Deviation Comparison for {specie} - Category: {emis_cat_name} ({emis_cat}) with minimal corr. L value ({L_min_value})', fontsize=18)
             ax.set_title(f'Relative Standard Deviation Comparison for {specie} {emis_cat_name} ({emis_cat}) with L = 0', fontsize=17)
             
             ax.set_xticks(range(len(country_labels)))
@@ -618,7 +617,6 @@ class Data_analyzer(object):
         fig.legend(handles=legend_handles, loc='upper center', bbox_to_anchor=(0.435, 0.035), fontsize=10, ncol=5)
 
         fig.text(0.003, 0.5, r'$\mathbf{Relative\ Standard\ Deviation\ [\%]}$', va='center', rotation='vertical', fontsize=16)
-        # plt.tight_layout(rect=[0, 0.85, 1, 1])
         plt.tight_layout(rect=[0.01, 0.015, 1, 1]) 
 
         if save_plot:
