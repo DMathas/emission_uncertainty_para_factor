@@ -239,7 +239,7 @@ class IterationsAnalysis:
         return C_sqrt, compute_time
     
 
-    def arnoldi_iteration(self, C: np.ndarray, n_steps: int = 350, eps: float = 1e-6) -> Tuple[np.ndarray, np.ndarray]:
+    def arnoldi_iteration(self, C: np.ndarray, n_steps: int = 450, eps: float = 1e-6) -> Tuple[np.ndarray, np.ndarray]:
         """
         Perform the Arnoldi iteration to approximate the square root of a matrix.
 
@@ -255,11 +255,11 @@ class IterationsAnalysis:
         st = time.time()
         # initializations:
         n = C.shape[0]
-        Q = np.zeros((n, n_steps), dtype=C.dtype)  
+        Q = np.zeros((n, n_steps), dtype=C.dtype)  # make the datatypes match for numba!
         H = np.zeros((n_steps, n_steps), dtype=C.dtype)  
         b = np.random.rand(n).astype(C.dtype)
         q = b / np.linalg.norm(b)
-        Q[:, 0] =  # first q vector ..
+        Q[:, 0] = q # first q vector ..
         
         # Regularize C:
         C += eps * np.eye(n, dtype=C.dtype)
@@ -279,11 +279,10 @@ class IterationsAnalysis:
 
             H[i + 1, i] = np.linalg.norm(v) # also 1 x 1
             if H[i + 1, i] > 0:
-                Q[:, i + 1] = v / H[i + 1, i] 
+                Q[:, i + 1] = v / H[i + 1, i] # also n x 1
         
         arnoldi_eigenvalues, V = np.linalg.eigh(H)
         arnoldi_eigenvalues[arnoldi_eigenvalues < 0] = 0
-
         # Sort the eigenvalues and corresponding eigenvectors V:
         idx = np.argsort(arnoldi_eigenvalues)[::-1]
         arnoldi_eigenvalues = arnoldi_eigenvalues[idx]
@@ -313,9 +312,9 @@ class IterationsAnalysis:
                                                     the tridiagonal matrix (T), and the beta values.
         """
         st = time.time()
-        n = C.shape[0]
+        n = C.shape[0]  
 
-        # initializations:  
+        # initializations:
         Q = np.zeros((n, n_steps), dtype=C.dtype)  # Orthogonal vectors
         T = np.zeros((n_steps, n_steps), dtype=C.dtype)  # Tridiagonal matrix
         beta = np.zeros(n_steps, dtype=C.dtype) 
@@ -346,7 +345,7 @@ class IterationsAnalysis:
 
         lanczos_eigenvalues, V = np.linalg.eigh(T)
         lanczos_eigenvalues[lanczos_eigenvalues < 0] = 0
-        
+
         # Sort the eigenvalues and corresponding eigenvectors V:
         idx = np.argsort(lanczos_eigenvalues)[::-1]
         lanczos_eigenvalues = lanczos_eigenvalues[idx]
@@ -360,7 +359,6 @@ class IterationsAnalysis:
         et = time.time()
 
         compute_time = round(et - st, 3)
-
         return C_sqrt_lanczos, compute_time
 
     @staticmethod
@@ -497,7 +495,7 @@ class IterationsAnalysis:
         return round(rel_variance_norm, 3), round(C_rel_fro_norm, 3)
 
 
-    def compare_norms(self, C_true, C_true_sqrt, C_estimated_sqrt):
+    def compare_norms(self, C_true, C_estimated_sqrt):
         """
         Compare various norms between true and estimated matrices.
 
@@ -507,27 +505,13 @@ class IterationsAnalysis:
             C_estimated_sqrt (np.ndarray): The estimated square root of the correlation matrix.
 
         Returns:
-            dict: Dictionary containing relative singular norm, relative Frobenius norm, 
-                and norms based on random samples.
+            dict: Dictionary containing relative Frobenius norm.
         """
-        # sing norms:
-        singular_norm_diff = np.linalg.norm(C_true_sqrt - C_estimated_sqrt, ord=2)
-        relative_singular_norm_diff = round((singular_norm_diff / np.linalg.norm(C_true_sqrt, ord=2)), 3)
-
-        # frob norms:
-        frob_norm_diff = np.linalg.norm(C_true_sqrt - C_estimated_sqrt, 'fro')
+        # Frobenius norm comparison for C:
         frob_norm_C_diff = np.linalg.norm(C_true - C_estimated_sqrt @ C_estimated_sqrt.T, 'fro')
-        relative_frob_norm_C_sqrt = round((frob_norm_diff / np.linalg.norm(C_true_sqrt, 'fro')), 3)
         relative_frob_norm_C = round((frob_norm_C_diff / np.linalg.norm(C_true, 'fro')), 3)
 
-        # random sampled norms:
-        rel_variance_norm, C_rel_fro_norm = self.compare_sample_stats(C_true_sqrt, C_estimated_sqrt)
-
-        return {'Rel. sing. norm C_sqrt': relative_singular_norm_diff,
-                # 'Rel. frob. norm C_sqrt': relative_frob_norm_C_sqrt,
-                'Rel. frob. norm C': relative_frob_norm_C,
-                'Rel. eucl. norm sample var.': rel_variance_norm,
-                'Rel. frob. norm sample cov.': C_rel_fro_norm}
+        return {'Rel. frob. norm C': relative_frob_norm_C}
 
 
     def compare_methods(self, nr_tests: int = 4):
@@ -545,39 +529,33 @@ class IterationsAnalysis:
         for country in self.countries:
             print(f'Analyzing {country} computation time and norms...')
             averages = {
-            'time_eigen': 0,
-            'time_arnoldi': 0,
-            'time_lanczos': 0,
-            'time_chol': 0,
-            'time_FBTBR': 0,
-            'norms_arnoldi': {'Rel. sing. norm C_sqrt': [], 'Rel. frob. norm C': [], 'Rel. eucl. norm sample var.': [], 'Rel. frob. norm sample cov.': []},
-            'norms_lanczos': {'Rel. sing. norm C_sqrt': [], 'Rel. frob. norm C': [], 'Rel. eucl. norm sample var.': [], 'Rel. frob. norm sample cov.': []},
-            'norms_FBTBR':   {'Rel. sing. norm C_sqrt': [], 'Rel. frob. norm C': [], 'Rel. eucl. norm sample var.': [], 'Rel. frob. norm sample cov.': []}
-            # 'norms_arnoldi': {'Rel. sing. norm C_sqrt': [], 'Rel. frob. norm C_sqrt': [], 'Rel. frob. norm C': [], 'Rel. eucl. norm sample var.': [], 'Rel. frob. norm sample cov.': []},
-            # 'norms_lanczos': {'Rel. sing. norm C_sqrt': [], 'Rel. frob. norm C_sqrt': [], 'Rel. frob. norm C': [], 'Rel. eucl. norm sample var.': [], 'Rel. frob. norm sample cov.': []},
-            # 'norms_FBTBR':   {'Rel. sing. norm C_sqrt': [], 'Rel. frob. norm C_sqrt': [], 'Rel. frob. norm C': [], 'Rel. eucl. norm sample var.': [], 'Rel. frob. norm sample cov.': []}
-        }
+                'time_eigen': 0,
+                'time_arnoldi': 0,
+                'time_lanczos': 0,
+                'time_chol': 0,
+                'time_FBTBR': 0,
+                'norms_arnoldi': [],
+                'norms_lanczos': [],
+                'norms_FBTBR': []
+            }
 
-            C_spec, _ = self.calculate_C_spec(country)
             C_square, _ = self.calculate_C_square(country)
             for _ in range(nr_tests):
-                # direct C_sqrt eigen:
-                C_sqrt_true_eigen, t_true_eigen = self.calculate_direct_C_sqrt_eigen(C_spec)
+                # Direct C_sqrt eigen:
+                C_sqrt_true_eigen, t_true_eigen = self.calculate_direct_C_sqrt_eigen(C_square)
                 averages['time_eigen'] += t_true_eigen
 
                 # Arnoldi & norms:
-                C_sqrt_arnoldi, t_arnoldi = self.arnoldi_iteration(C_spec)
-                norms_arnoldi = self.compare_norms(C_spec, C_sqrt_true_eigen, C_sqrt_arnoldi)
+                C_sqrt_arnoldi, t_arnoldi = self.arnoldi_iteration(C_square)
+                norm_arnoldi = self.compare_norms(C_square, C_sqrt_arnoldi)
                 averages['time_arnoldi'] += t_arnoldi
-                for key in norms_arnoldi:
-                    averages['norms_arnoldi'][key].append(norms_arnoldi[key])
+                averages['norms_arnoldi'].append(norm_arnoldi['Rel. frob. norm C'])
 
                 # Lanczos & norms:
-                C_sqrt_lanczos, t_lanczos = self.lanczos_iteration(C_spec)
-                norms_lanczos = self.compare_norms(C_spec, C_sqrt_true_eigen, C_sqrt_lanczos)
+                C_sqrt_lanczos, t_lanczos = self.lanczos_iteration(C_square)
+                norm_lanczos = self.compare_norms(C_square, C_sqrt_lanczos)
                 averages['time_lanczos'] += t_lanczos
-                for key in norms_lanczos:
-                    averages['norms_lanczos'][key].append(norms_lanczos[key])
+                averages['norms_lanczos'].append(norm_lanczos['Rel. frob. norm C'])
 
                 # Direct C_sqrt chol:
                 C_sqrt_true_chol, t_true_chol = self.calculate_direct_C_sqrt_chol(C_square)
@@ -585,26 +563,34 @@ class IterationsAnalysis:
 
                 # FBTBR & norms:
                 C_sqrt_FBTBR, t_FBTBR = self.FBTBR(C_square)
-                norms_FBTBR = self.compare_norms(C_square, C_sqrt_true_chol, C_sqrt_FBTBR)
+                norm_FBTBR = self.compare_norms(C_square, C_sqrt_FBTBR)
                 averages['time_FBTBR'] += t_FBTBR
-                for key in norms_FBTBR:
-                    averages['norms_FBTBR'][key].append(norms_FBTBR[key])
+                averages['norms_FBTBR'].append(norm_FBTBR['Rel. frob. norm C'])
 
             # Calculate averages:
             for key in averages:
                 if 'time' in key:
                     averages[key] = round((averages[key] / nr_tests), 3)
                 elif 'norms' in key:
-                    for norm_key in averages[key]:
-                        averages[key][norm_key] = round((sum(averages[key][norm_key]) / nr_tests), 3)
+                    averages[key] = round((sum(averages[key]) / nr_tests), 3)
 
             country_size = self.size
             formatted_country = f"{country} ({country_size})"
             results[formatted_country] = averages
+
+        df_results = pd.DataFrame.from_dict(results, orient='index')
+        filename = 'Results_save.csv'
+        full_path = os.path.join(self.save_path, filename)
+        df_results.to_csv(full_path)
+        print(f"Table saved to {full_path}\n")
         
         return results
-            
 
+    def load_results(file_path):
+        df_results = pd.read_csv(file_path, index_col=0)
+        results = df_results.to_dict(orient='index')
+        return results
+            
     def plot_results(self, results, save_plot=False, high_dpi=True):
         """
         Plot the results of computation times and norms for each country.
@@ -651,11 +637,9 @@ class IterationsAnalysis:
         # Legend for the first figure:
         fig1.legend(labels=labels, loc='upper center', bbox_to_anchor=(0.4, 0.055), fontsize=13, fancybox=True, shadow=True, ncol=5)
         plt.tight_layout(rect=[0.01, 0.07, 1, 1]) 
- 
-
 
         if save_plot:
-            filename = 'computation_times_plot_TESTTTT.png'
+            filename = 'computation_times_plot_new_norm.png'
             full_path = os.path.join(self.save_path, filename)
             plt.savefig(full_path)
             print(f"\n Plot saved to {full_path}")
@@ -664,30 +648,28 @@ class IterationsAnalysis:
         plt.close(fig1)
 
         # Second figure: Norm Metrics
-        fig2, axes2 = plt.subplots(3, 1, figsize=(10, 12), dpi=dpi_setting)
+        fig2, ax = plt.subplots(figsize=(11, 6), dpi=dpi_setting)
         norm_types = ['norms_arnoldi', 'norms_lanczos', 'norms_FBTBR']
-        norms = ['Rel. sing. norm C_sqrt', 'Rel. frob. norm C', 'Rel. eucl. norm sample var.', 'Rel. frob. norm sample cov.']
-        line_styles = ['--', '--', '-', '-', '-']
-        norm_labels = []
+        line_styles = ['-', '-', '-']
+        norm_labels = [
+            'Rel frob norm diff. C - Arnoldi',
+            'Rel frob norm diff. C - Lanczos',
+            'Rel frob norm diff. C - FBTBR'
+        ]
 
-        for ax, norm_type in zip(axes2, norm_types):
-            for norm, style in zip(norms, line_styles):
-                norm_values = [results[country][norm_type][norm] for country in results]
-                label = norm
-                ax.plot(list(results.keys()), norm_values, marker='o', label=label, linestyle=style)
-                if label not in norm_labels:
-                    norm_labels.append(label)
-            ax.set_title(f'{norm_type.split("_")[1].upper()} Norm Metrics') 
-            ax.set_ylabel('Relative Norm Value')
-            ax.grid(True, linestyle=':')
+        for norm_type, style, label in zip(norm_types, line_styles, norm_labels):
+            norm_values = [results[country][norm_type] for country in results]
+            ax.plot(list(results.keys()), norm_values, marker='o', label=label, linestyle=style)
 
-        # Legend for the second figure:
-        fig2.legend(labels=norm_labels, loc='upper center', bbox_to_anchor=(0.45, 0.055),  fontsize=14, fancybox=True, shadow=True, ncol=3)
-        # plt.tight_layout(rect=[0, 0.05, 1, 1])
-        plt.tight_layout(rect=[0.01, 0.08, 1, 1]) 
+        ax.set_title('Relative Frobenius Norm Differences by Method')
+        ax.set_ylabel('Relative Frobenius Norm Value')
+        ax.grid(True, linestyle=':')
+        ax.legend(loc='upper center', bbox_to_anchor=(0.46, -0.185), fontsize=14, fancybox=True, shadow=True, ncol=3)
+
+        plt.tight_layout(rect=[0.01, 0.08, 1, 1], pad=2)
 
         if save_plot:
-            filename = 'norm_metrics_plot_FINAL.png'
+            filename = 'norm_metrics_plot_new_norm_combined.png'
             full_path = os.path.join(self.save_path, filename)
             plt.savefig(full_path)
             print(f"\n Norm metrics plot saved to {full_path}\n")
@@ -708,32 +690,28 @@ class IterationsAnalysis:
         """
         data = []
         methods = ['eigen', 'arnoldi', 'lanczos', 'chol', 'FBTBR']
-        norm_types = ['norms_arnoldi', 'norms_lanczos', 'norms_FBTBR']
-        norms = ['Rel. sing. norm C_sqrt', 'Rel. frob. norm C', 'Rel. eucl. norm sample var.', 'Rel. frob. norm sample cov.']
 
-        # Set a baseline for rel comparison:
+        # Set a baseline for relative comparison:
         baseline_times = {f'time_{method}': results[list(results.keys())[0]][f'time_{method}'] + 1e-5 for method in methods}
 
         for country in results:
             for method in methods:
                 entry = {
                     'Country-Method': f'{country} - {method.capitalize()}',
-                    'Abs. Time': results[country][f'time_{method}'],
-                    'Rel. Time': 100 * (results[country][f'time_{method}'] + 1e-5) / baseline_times[f'time_{method}']
+                    'Abs. Time': round(results[country][f'time_{method}'], 3),
+                    'Rel. Time': int(round(100 * (results[country][f'time_{method}'] + 1e-5) / baseline_times[f'time_{method}'], 0))
                 }
                 # Add norms
                 if method in ['arnoldi', 'lanczos', 'FBTBR']:
-                    for norm in norms:
-                        entry[norm] = results[country][f'norms_{method}'][norm]
+                    entry['Rel. frob. norm C'] = round(results[country][f'norms_{method}'], 3)
                 else:  # Numpy eigen / chol are assumed to be 'true':
-                    for norm in norms:
-                        entry[norm] = None
+                    entry['Rel. frob. norm C'] = None
                 data.append(entry)
 
         df = pd.DataFrame(data)
         df.set_index(['Country-Method'], inplace=True)
 
-        filename = 'Computation_Times_and_Norms_FINAL.csv'
+        filename = 'Computation_Times_and_Norms_new_norm.csv'
         full_path = os.path.join(self.save_path, filename)
         df.to_csv(full_path)
         print(f"Table saved to {full_path}\n")
@@ -755,46 +733,44 @@ class IterationsAnalysis:
         if save_plot:
             plt.ioff()  # Turn off interactive plotting to avoid showing it inline if saving.
 
-        C_spec, _ = self.calculate_C_spec(example_country)
         C_square, _ = self.calculate_C_square(example_country)
 
-        C_sqrt_true_eigen, _ = self.calculate_direct_C_sqrt_eigen(C_spec)
-        C_sqrt_arnoldi, _ = self.arnoldi_iteration(C_spec)
-        C_sqrt_lanczos, _ = self.lanczos_iteration(C_spec)
-        C_sqrt_true_chol, _ = self.calculate_direct_C_sqrt_chol(C_square)
+        # Factorization methods using the square matrix
+        C_sqrt_arnoldi, _ = self.arnoldi_iteration(C_square)
+        C_sqrt_lanczos, _ = self.lanczos_iteration(C_square)
         C_sqrt_FBTBR, _ = self.FBTBR(C_square)
 
-        # Square roots and C reconstructions:
-        sqrt_methods = [C_sqrt_true_eigen, C_sqrt_arnoldi, C_sqrt_lanczos, C_sqrt_true_chol, C_sqrt_FBTBR]
-        method_names = ['NUMPY Eigen', 'Arnoldi', 'Lanczos', 'NUMPY Chol (using C. sq. m.)', 'FBTBR (using C. sq. m.)']
-        reconstructed = [m @ m.T for m in sqrt_methods]
+        # Reconstructed C matrices
+        sqrt_methods = [C_square, C_sqrt_arnoldi, C_sqrt_lanczos, C_sqrt_FBTBR]
+        method_names = ['True', 'Arnoldi', 'Lanczos', 'FBTBR']
+        reconstructed = [C_square] + [m @ m.T for m in sqrt_methods[1:]]
 
-        # Plot:
+        # Plot
         dpi_setting = 300 if high_dpi else None
-        fig, axes = plt.subplots(2, 5, figsize=(15, 6), dpi=dpi_setting)
+        fig, axes = plt.subplots(2, 4, figsize=(15, 6), dpi=dpi_setting)
 
-        for i, (sqrt, recon) in enumerate(zip(sqrt_methods, reconstructed)):
+        for i, recon in enumerate(reconstructed):
+            # First row: Normal heatmap
             ax = axes[0, i]
-            im = ax.imshow(sqrt, cmap='plasma', interpolation='nearest', norm=LogNorm())
-            ax.set_title(f'{method_names[i]} $C^{{1/2}}$', fontsize=9.5)
+            im = ax.imshow(recon, cmap='plasma', interpolation='nearest')
+            ax.set_title(f'{method_names[i]} $C$', fontsize=9.5)
             ax.axis('off')
 
+            # Second row: LogNorm heatmap
             ax = axes[1, i]
-            ax.imshow(recon, cmap='plasma', interpolation='nearest', norm=LogNorm())
-            ax.set_title(f'{method_names[i]} $C$', fontsize=9.5)
+            im = ax.imshow(recon, cmap='plasma', interpolation='nearest', norm=LogNorm())
+            ax.set_title(f'{method_names[i]} $C$ (LogNorm)', fontsize=9.5)
             ax.axis('off')
 
         # Add colorbar:
         fig.subplots_adjust(right=0.8)
-        cbar_ax = fig.add_axes([0.85, 0.15, 0.015, 0.7])
-        cbar = fig.colorbar(im, cax=cbar_ax)
-        cbar.ax.tick_params(labelsize=12) 
+        cbar_ax = fig.add_axes([0.85, 0.115, 0.015, 0.76])
         fig.colorbar(im, cax=cbar_ax)
 
         if save_plot:
-            filename = 'C_sqrt_comparison_plot_FINAL.png'
+            filename = 'C_sqrt_comparison_plot_NEW.png'
             full_path = os.path.join(self.save_path, filename)
-            plt.savefig(full_path)#, bbox_inches='tight')
+            plt.savefig(full_path)
             print(f"\nPlot saved to {full_path}\n")
         else:
             plt.show()
@@ -804,7 +780,9 @@ class IterationsAnalysis:
 
 ################ MAIN: ################
 def main():
-    """Main function to execute the iterations time and norm comparisons and plotting.""" 
+    """
+    Main function to execute the iterations time and norm comparisons and plotting.
+    """ 
     # load in data: 
     ds_unc_TNO = xr.open_dataset(path_ds_unc_TNO)
     df_unc_TNO = TNO_processing_classes.Emis_unc_DF(ds_unc_TNO)
@@ -812,14 +790,14 @@ def main():
     print("Loaded in all data.\n")
     save_path = '/tsn.tno.nl/Data/SV/sv-059025_unix/ProjectData/Internship/David/Plots/Iteration_plots'
 
-    countries = ['LUX', 'SVN', 'NLD', 'AUT', 'GRC', 'ROU', 'POL', 'ESP'] # logical size comparison
+    countries = ['LUX', 'SVN', 'NLD', 'AUT', 'ROU', 'POL', 'ESP'] # ascending size comparison
     specie = 'CO2'
     cat = 'F1-F2-F3-F4'
 
     full_grid = df_unc_TNO.grid
     iterations = IterationsAnalysis(optimized_params_dir, full_grid, countries, specie, cat, save_path)
     
-    # Exploratory plots:
+    # Exploratory plot:
     iterations.exploratory_plot_C_sqrt()
 
     results = iterations.compare_methods()

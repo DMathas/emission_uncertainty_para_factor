@@ -1,4 +1,7 @@
+#! /usr/bin/env python3
+
 ## TNO tools for calculations - David Mathas - TNO
+
 # import binas
 import numpy as np
 import numba
@@ -57,44 +60,16 @@ def ll_distance( lon1, lat1, lon2, lat2, radius=6371000) : # NOT MY OWN CODE
 ##
 @numba.jit(nopython=True)
 def make_distance_matrix(coords: np.ndarray) -> np.ndarray:
-    """DOCSTRINGS
-    """
     n_points = coords.shape[0]
     distance_matrix = np.zeros((n_points, n_points))
 
     for i in range(n_points):
         for j in range(i + 1, n_points): 
-            distance = ll_distance(coords[i][1], coords[i][0], coords[j][1], coords[j][0])
+            distance = ll_distance(coords[i][1], coords[i][0], coords[j][1], coords[j][0]) ## USING NOT MY OWN (ARJO's) CODE
             distance_matrix[i, j] = distance
             distance_matrix[j, i] = distance  # since it's a symmetric matrix
 
     return distance_matrix
-
-
-
-# def make_distance_matrix_vec(coords): # made with help of Arjo function
-#     """
-#     DOCSTRINGS
-#     """
-#     # Earths' radius in meters:
-#     radius = 6371000
-    
-#     # From degrees to radians:
-#     lat_rad, lon_rad = np.radians(coords[:, 0]), np.radians(coords[:, 1])
-
-#     lat_rad = lat_rad[:, np.newaxis]
-#     lon_rad = lon_rad[:, np.newaxis]
-
-#     # Using the spherical law of cosines:
-#     delta_lon = lon_rad - lon_rad.T
-#     #### TIME BORDER
-#     # print(delta_)
-#     cos_c = np.sin(lat_rad) * np.sin(lat_rad.T) + np.cos(lat_rad) * np.cos(lat_rad.T) * np.cos(delta_lon)
-#     cos_c = np.clip(cos_c, -1, 1) # need this range for arccos!
-
-#     distance_matrix = radius * np.arccos(cos_c)
-
-#     return distance_matrix
 
 
 def make_distance_matrix_vec(coords): 

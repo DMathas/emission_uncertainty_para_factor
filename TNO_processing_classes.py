@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 # David Mathas - TNO 
 
 # imports:
@@ -216,7 +218,7 @@ class Emis_unc_DF(object):
             self.sources[f"unc_distr_{specie}"] = ds["unc_dist"].values[:, ispecie]
 
         # extract regular grid:
-        # self.grid = ds[['longitude','latitude','longitude_bounds','latitude_bounds','area']] # --> in case of 
+        # self.grid = ds[['longitude','latitude','longitude_bounds','latitude_bounds','area']] 
         self.grid = ds[['longitude','latitude']]
 
     def extract_country_lvl(self,
@@ -311,7 +313,9 @@ class Emis_unc_DF(object):
 
 ### DATA ANALYZER for both emission and uncertainty dataframes ### 
 class Data_analyzer(object):
-    """Class to generate different kinds of plots."""
+    """
+    Class to analyze and generate plots.
+    """
 
     def __init__(self, emission_df, basepath):
         self.data = emission_df 

@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 # David Mathas - TNO
 
 # imports:
@@ -16,8 +18,8 @@ def main():
     # Paths:
     YEAR = 2018
     pdir = Path(os.path.join(os.environ['PROJECTS'], 'EU/CoCO2'))
-    path_ds_unc_TNO = os.path.join( pdir, 'WP2-priors', 'Task5-uncertainties', 'data', 'output', 'TNO_GHGco_v4_0_%i_uncertainties_v2_0_COCO2.nc' % YEAR)
-    basepath = Path(os.environ['MODAS_SHARED'])
+    path_ds_unc_TNO = os.path.join( pdir, 'WP2-priors', 'Task5-uncertainties', 'data', 'output', 'TNO_GHGco_v4_0_%i_uncertainties_v2_0_COCO2.nc' % YEAR) # change path here to other path if runninng locally.
+    basepath = Path(os.environ['MODAS_SHARED']) # change path here to other path if runninng locally.
     final_code_dir = basepath / 'ProjectData' / 'Internship' / 'David' / 'Code' / 'Final code' 
 
     # Load in data:

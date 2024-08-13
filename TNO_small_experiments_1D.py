@@ -1,4 +1,6 @@
-# David Mathas
+#! /usr/bin/env python3
+
+# David Mathas - TNO
 
 # imports:
 import numpy as np
@@ -13,11 +15,11 @@ rc('text', usetex=True)
 from typing import Tuple
 
 ### COMPUTATION AND HELPER FUNCTIONS: 
-
 def spatial_corr_sim_1D(L: int, 
                         num_locations: int, 
                         print_results: bool = True) -> np.ndarray:
-    """Calculates and returns the spatial correlation matrix, standard deviation matrix, 
+    """
+    Calculates and returns the spatial correlation matrix, standard deviation matrix, 
     and covariance matrix for a given set of locations and the spatial correlation length L.
 
     Args:
@@ -28,21 +30,19 @@ def spatial_corr_sim_1D(L: int,
     Returns:
         np.ndarray: Spatial correlation matrix C.
     """
-    # locations = np.linspace(0, 101, num_locations)
     locations = np.arange(num_locations) # locations vector 
-    # print("Simulated locations: \n", locations) 
 
     # Use L2 norm for distance and comput d (differences between locations):
-    d = cdist(np.array(locations).reshape(-1, 1), np.array(locations).reshape(-1, 1), metric='euclidean') #first make sure both are column matrixes 
+    d = cdist(np.array(locations).reshape(-1, 1), np.array(locations).reshape(-1, 1), metric='euclidean')
     if print_results: 
         print("Distances d: \n", np.array_str(d, precision = 3, suppress_small = True), '\n')
 
     # Compute and show C (spatial correlation matrix):
     if L > 0:
-        C = np.exp(-.5 * (d / L)**2)
+        C = np.exp(-d / L)
         epsilon = 1e-10  #helps in ensuring positive definiteness
         np.fill_diagonal(C, 1 + epsilon)
-    elif d.any() > 0: # zero correlation at all ?C = np.zeros(d.shape)
+    elif d.any() > 0: 
         C = np.eye(d.shape[0])
     else: #since exp(0) only gives ones
         C = np.ones(d.shape)
@@ -54,7 +54,8 @@ def spatial_corr_sim_1D(L: int,
     return C
 
 def sorted_evalues_evectors(C: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Computes and returns sorted positive eigenvalues and corresponding eigenvectors.
+    """
+    Computes and returns sorted positive eigenvalues and corresponding eigenvectors.
 
     Args:
         C (np.ndarray): Input matrix of simulated patial correlation matrix C for eigenvalue decomposition.
@@ -81,7 +82,8 @@ def sorted_evalues_evectors(C: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.n
     return positive_sorted_Λ, Λ, corresponding_Q, Q
 
 def compute_B(S: np.ndarray, C: np.ndarray) -> np.ndarray:
-    """Computes the covariance matrix B.
+    """
+    Computes the covariance matrix B.
 
     Args:
         S (np.ndarray): The standard deviation matrix.
@@ -97,9 +99,19 @@ def compute_B(S: np.ndarray, C: np.ndarray) -> np.ndarray:
 def st_dev_matrix(num_locations: int,
                   rho_sigma_factor: float,
                   cons_emission_val: float) -> np.ndarray:
-    """DOCSTRINGS"""
+    """
+    Construct the standard deviation matrix (S) with a constant value on the diagonal.
+
+    Args:
+        num_locations (int): Number of locations (diagonal elements).
+        rho_sigma_factor (float): Factor to scale the standard deviation.
+        cons_emission_val (float): Constant emission value for scaling.
+
+    Returns:
+        np.ndarray: Diagonal matrix with standard deviation values.
+    """
     # Build the st. dev. matrix S with st. dev. on the diagonal:
-    sigma_e = cons_emission_val * rho_sigma_factor # --> given L, which value for rho_sigma_factor to match ER (Emissie Registratie) emission value
+    sigma_e = cons_emission_val * rho_sigma_factor
     S = np.diag(np.full(num_locations, sigma_e))
     
     return S
@@ -107,10 +119,19 @@ def st_dev_matrix(num_locations: int,
 def aggregated_unc(a_coord: list,
                    S_sim: np.ndarray,
                    C_sim: np.ndarray) -> float:
-    """DOCSTRINGS"""
+    """Calculate the standard deviation of the aggregated uncertainty over specified coordinates.
+
+    Args:
+        a_coord (list): The range of coordinates to aggregate.
+        S_sim (np.ndarray): The standard deviation matrix.
+        C_sim (np.ndarray): The correlation matrix.
+
+    Returns:
+        float: The standard deviation of the aggregated emissions over the specified coordinates.
+    """
     # set up locations and emissions:
     num_locations = S_sim.shape[0]
-    emission_value = S_sim[0][0] # ASSUMED THAT EMISSION VALUES ARE CONSTANT ON DIAGONAL OF S IN THIS EXPERIMENT
+    emission_value = S_sim[0][0] 
     locations = np.arange(num_locations)
     emissions = np.array([emission_value] * num_locations).reshape(-1, 1) 
 
@@ -129,7 +150,8 @@ def aggregated_unc(a_coord: list,
 def heatmap_C_QQ(C: np.ndarray, 
                  Q_positive_sorted: np.ndarray, 
                  high_dpi: int = None) -> None:
-    """Plot heatmaps for the original correlation matrix (C) and the product of the sorted positive eigenvectors (Q).
+    """
+    Plot heatmaps for the original correlation matrix (C) and the product of the sorted positive eigenvectors (Q).
 
     Args:
         C (np.ndarray): Original correlation matrix.
@@ -205,7 +227,7 @@ def plot_eigenvalues_and_eigenvectors(positive_sorted_Λ: np.ndarray,
 
     # Eigenvectors plot:
     nr_evectors = int(num_eigenvectors / 2) if num_eigenvectors <= 16 else 5
-    for i in range(nr_evectors): # divide by two or reduce to a constant to avoid cluttered plot of multiple eigenvectors!
+    for i in range(nr_evectors): 
         axes[1].plot(positive_sorted_Q[:, i], label=f'Eigenvector {i+1}')
     axes[1].set_xlabel('Cell Index')
     axes[1].set_ylabel('Eigenvector Value')
@@ -230,7 +252,8 @@ def plot_eigenvectors_cumulative(positive_sorted_Λ: np.ndarray,
                                  positive_sorted_Q: np.ndarray, 
                                  num_eigenvectors: int = 5,
                                  high_dpi: int = None) -> None:
-    """Plot eigenvectors and cumulative eigenvectors.
+    """
+    Plot eigenvectors and cumulative eigenvectors.
 
     Args:
         positive_sorted_Λ (np.ndarray): Array of positive sorted eigenvalues.
@@ -303,7 +326,7 @@ def plot_L_comparison_experiment(L_values: list,
         positive_sorted_Λ, _, _, _ = sorted_evalues_evectors(C_sim)
         axes[0].plot(range(1, num_eigen + 1), positive_sorted_Λ[: num_eigen], marker='o',label=f'L = {L}')
         cumulative_eigenvalues = np.cumsum(positive_sorted_Λ)
-        percentage_explained = (cumulative_eigenvalues / np.sum(positive_sorted_Λ)) * 100 # Calculate percentage of C explained by the cumulative eigenvalue sum
+        percentage_explained = (cumulative_eigenvalues / np.sum(positive_sorted_Λ)) * 100 
         axes[1].plot(range(1, num_eigen + 1), percentage_explained[: num_eigen], marker='o', label=f'L = {L}') 
 
     axes[0].set_xticks(np.arange(1, num_eigen + 1, 1))
@@ -358,7 +381,7 @@ def spatial_corr_convergence_experiment(positive_sorted_Λ: np.ndarray,
     if zeroing:
         relative_threshold = 0.001  # 0.1% of the largest eigenvalue
         cutoff_threshold = relative_threshold * positive_sorted_Λ[0]
-        significant_eigenvalues = positive_sorted_Λ > cutoff_threshold # find the number of eigenvalues greater than the cutoff threshold
+        significant_eigenvalues = positive_sorted_Λ > cutoff_threshold 
         positive_sorted_Λ[~significant_eigenvalues] = 0
 
     # Construct the square root of C:
@@ -366,7 +389,7 @@ def spatial_corr_convergence_experiment(positive_sorted_Λ: np.ndarray,
 
     # Perform simulations for different sample sizes N_sim:
     for iN in N_sim:
-        W = np.random.normal(0, 1, (N_locations, iN)) # Generate N random vectors from a standard normal distribution with length N_locations
+        W = np.random.normal(0, 1, (N_locations, iN))
         V = C_sqrt @ W
 
         # Compute ensemble stats and store them:
@@ -415,7 +438,8 @@ def plot_sigmas_experiment(L_values: list,
                          num_locations: int = 100,
                          plot_option: int = 1,
                          high_dpi: bool = False) -> None:
-    """Plots the relationship between rho_sigma factor, L value, and aggregated uncertainty.
+    """
+    Plots the relationship between rho_sigma factor, L value, and aggregated uncertainty.
 
     Args:
         L_values (list): A list of L values to be considered.
@@ -488,14 +512,16 @@ def plot_sigmas_experiment(L_values: list,
     
 ################ MAIN: ################
 def main():
-    """Main function to execute the spatial correlation experiments and plotting.""" 
+    """
+    Main function to execute the spatial correlation experiments and plotting.
+    """ 
     start_time = time.time() # start of timer 
 
     # Constants:
     NUM_LOCATIONS = 100
     L = 20
     L_VALUES_LIST = np.arange(0, 26, 5)  # Define which values of L should be compared in the plot for experiment 1 and 2 
-    SIMULATION_SIZES = [int(size) for size in  [1e2, 1e3, 1e4, 1e5, 1e6, 1e7]] # for CLT convergence experiment
+    SIMULATION_SIZES = [int(size) for size in  [1e2, 1e3, 1e4, 1e5, 1e6, 1e7]] # for CLT/LLN convergence experiment
 
     # Simulate matrices:
     C_sim = spatial_corr_sim_1D(L=L, num_locations=NUM_LOCATIONS)  # Simulate spatial corr. matrix C
@@ -508,7 +534,7 @@ def main():
 
     # # Small scale simulated experiments:
     plot_L_comparison_experiment(L_values=L_VALUES_LIST, high_dpi=0)
-    # spatial_corr_convergence_experiment(sorted_pos_lambda, corresp_sorted_Q, SIMULATION_SIZES, NUM_LOCATIONS, C_sim, high_dpi=0)
+    spatial_corr_convergence_experiment(sorted_pos_lambda, corresp_sorted_Q, SIMULATION_SIZES, NUM_LOCATIONS, C_sim, high_dpi=0)
     test_coord = [30, 70]
     rho_sigma_factor_LIST = np.arange(0.01, 0.21, 0.01)
     sigma_eta_values_LIST = np.linspace(0.01, 100, 6)

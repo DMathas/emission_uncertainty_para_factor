@@ -10,7 +10,9 @@ from TNO_processing_classes import EmisDF, Data_analyzer
 
 ################ MAIN: ################ 
 def main():
-    """Main function to import, convert and plot emission data.""" 
+    """
+    Main function to import, convert and plot emission data.
+    """ 
     start_time = time.time() # start of timer 
         
     # load in data:
@@ -20,7 +22,7 @@ def main():
     print('Path: \n', pdir, '\n')
 
     path_data_TNO_2018 = pdir / 'TNO_GHGco_v4_0_year2018.nc'
-    ds_TNO_2018 = xr.open_dataset(path_data_TNO_2018)
+    ds_TNO_2018 = xr.open_dataset(path_data_TNO_2018) # change path here to other path if runninng locally.
     print('NetCDF file: \n', ds_TNO_2018, '\n')
 
     # convert:
@@ -30,14 +32,14 @@ def main():
     # Plotting/analyzer class instantiate:
     analyzer = Data_analyzer(df_TNO_2018, basepath)
      
-    # analyzer.plot_map(species = 'co2_ff', 
-    #                   country_acro = ['NLD', 'DEU'], # --> None gives Europe 
-    #                   emis_cat = ['A'],  
-    #                   high_dpi = 1,
-    #                   save_plot = 1)
-    # analyzer.plot_bar(species_list = ['co2_ff'], 
-    #                   country_acro = ['NLD'], 
-    #                   high_dpi = 1)
+    analyzer.plot_map(species = 'co2_ff', 
+                      country_acro = ['NLD', 'DEU'], # --> None gives Europe 
+                      emis_cat = ['A'],  
+                      high_dpi = 1,
+                      save_plot = 1)
+    analyzer.plot_bar(species_list = ['co2_ff'], 
+                      country_acro = ['NLD'], 
+                      high_dpi = 1)
     
     # loop over all species and emis cats and make EU plots:
     progress = 0

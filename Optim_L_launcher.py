@@ -1,19 +1,9 @@
 #! /usr/bin/env python3
 
+### LAUNCHER for running L optimization procedure parallel on cluster ###
 
-# filename: Optim_L_launcher.py
 import os
 import subprocess
-
-# countries = ['LUX'] #,'BEL','LUX']
-
-# for country in countries :
-#     os.environ['COUNTRY'] = country
-#     subprocess.check_call( ["hopjob",
-#                             f"--job-name=optim-L-{country}",
-#                             "./TNO_optim_L_gamma.py",
-#                             "--submit"])
-
 
 # Check with countries still need to be optimized and select those:
 directory_path = '/tsn.tno.nl/Data/SV/sv-059025_unix/ProjectData/Internship/David/Code/Updated_corr_lengths_gamma'
@@ -55,6 +45,3 @@ for country in countries:
                            "--wrap=./TNO_optim_L_gamma.py",
                            "--time=7-0:00:00",
                            "--partition=longq"])
-
-# seff -j JOBID --> to check job eval in bash 
-

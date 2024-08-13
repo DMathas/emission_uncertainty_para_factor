@@ -1,5 +1,4 @@
 #! /usr/bin/env python3
-#! /usr/bin/env python3
 
 # David Mathas - TNO 
 
@@ -243,8 +242,8 @@ def run_optimization_for_country(country: str,
     save_path = f'/tsn.tno.nl/Data/SV/sv-059025_unix/ProjectData/Internship/David/Code/Updated_corr_lengths_gamma/Updated_corr_lengths_gamma_{country}.csv'
     results_df.to_csv(save_path, index=False)
     # To latex:
-    # latex_output = results_df.to_latex(index=False, caption="Optimization Results", label="tab:optim_results", longtable=True, column_format='|c|c|c|c|c|c|')
-    # print(latex_output)
+    latex_output = results_df.to_latex(index=False, caption="Optimization Results", label="tab:optim_results", longtable=True, column_format='|c|c|c|c|c|c|')
+    print(latex_output)
     
     return results_df
 
