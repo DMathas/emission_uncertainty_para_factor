@@ -583,12 +583,6 @@ class Data_analyzer(object):
 
             for country in countries:
                 sigma_eta_reported, sigma_eta_calc = self.sigmas_helper_zero(country, specie, emis_cat)
-                # sigma_eta_reported, sigma_eta_calc = self.calculate_aggregated_sigma(L_min_value, country, specie, emis_cat)
-
-                # if (sigma_eta_orig > 0 and sigma_eta_calc > 0) or \
-                #    (sigma_eta_orig > 0 and sigma_eta_calc == 0) or \
-                #    (sigma_eta_orig == 0 and sigma_eta_calc > 0): # leave the cases where both sigmas are zero for further research...           
-                    
                 country_labels.append(country)
 
                     # Color for sigma_eta_original:
@@ -612,17 +606,6 @@ class Data_analyzer(object):
             ax.grid(True, linestyle=':')
             ax.tick_params(axis='y', labelsize=9)
 
-            # legend_handles = [
-        #     mlines.Line2D([], [], color='red', marker='s', linestyle='None', markersize=5.5, label=f'Aggregated $\sigma_{{\eta, L=0}}$ ({specie}), above reported'),
-        #     mlines.Line2D([], [], color='green', marker='s', linestyle='None', markersize=5.5, label=f'Aggregated $\sigma_{{\eta, L=0}}$ ({specie}), within reported range'),
-        #     mlines.Line2D([], [], color='blue', marker='s', linestyle='None', markersize=5.5, label=f'Aggregated $\sigma_{{\eta, L=0}}$ ({specie}), value zero'),
-        #     mlines.Line2D([], [], color='black', marker='*', linestyle='None', markersize=5.5, label=f'Reported $\sigma_{{\eta}}$ ({specie})'),
-        #     mlines.Line2D([], [], color='blue', marker='*', linestyle='None', markersize=5.5, label=f'Reported $\sigma_{{\eta}}$ ({specie}), value zero'
-        #     )
-        # ]
-        # # ax.legend(handles=legend_handles, loc='upper right', fontsize=7)
-        # ax.legend(handles=legend_handles, loc='upper right', bbox_to_anchor=(1., 1.155), fontsize=6.5, ncol=3)
-
         legend_handles = [
                 mlines.Line2D([], [], color='red', marker='s', linestyle='None', markersize=5.5, label=f'Aggregated $\sigma_{{\eta}}$, above reported'),
                 mlines.Line2D([], [], color='green', marker='s', linestyle='None', markersize=5.5, label=f'Aggregated $\sigma_{{\eta}}$, below reported'),
@@ -631,9 +614,7 @@ class Data_analyzer(object):
                 mlines.Line2D([], [], color='blue', marker='*', linestyle='None', markersize=5.5, label=f'Reported $\sigma_{{\eta}}$, value zero'
                 )
             ]
-            # ax.legend(handles=legend_handles, loc='upper right', fontsize=7)
-        # fig.legend(handles=legend_handles, loc='upper right', bbox_to_anchor=(.91, 0.0), fontsize=10.5, ncol=5)
-        # fig.legend(handles=legend_handles, loc='upper center', bbox_to_anchor=(0.4, 0.1), fontsize=10, ncol=5)
+
         fig.legend(handles=legend_handles, loc='upper center', bbox_to_anchor=(0.435, 0.035), fontsize=10, ncol=5)
 
         fig.text(0.003, 0.5, r'$\mathbf{Relative\ Standard\ Deviation\ [\%]}$', va='center', rotation='vertical', fontsize=16)
